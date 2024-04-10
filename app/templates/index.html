@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Word Counter</title>
+</head>
+<body>
+    <h1>Word Counters</h1>
+    <form action="/process" method="post">
+        <textarea name="text" rows="5" cols="40"></textarea><br>
+        <input type="submit" value="Process">
+    </form>
+    <div id="result">
+        {% if result %}
+            <p>{{ result }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
