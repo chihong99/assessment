@@ -4,13 +4,25 @@
     <title>Word Count</title>
 </head>
 <body>
+    <h1>Word Counter</h1>
+    <hr>
+    <p>
+    Upload your file here (only txt file).
+    </p>
     <input type="file" id="fileInput" accept=".txt">
+    <p></p>
+    <hr>
+    <h3>File Contain:</h3>
+    <pre id="input"></pre>
+    <hr>
+    <h3>Output:</h3>
     <pre id="output"></pre>
     <script>
         document.getElementById('fileInput').addEventListener('change', function(event) {
             var file = event.target.files[0];
             var reader = new FileReader();
             reader.onload = function() {
+                document.getElementById('input').textContent = reader.result;
                 var text = reader.result.toLowerCase();
                 var words = text.match(/\b\w+\b/g);
                 var wordCounts = {};
