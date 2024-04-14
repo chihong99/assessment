@@ -10,6 +10,7 @@ from diagrams.alibabacloud.web import Dns
 from diagrams.alibabacloud.security import AntiDdosPro
 from diagrams.k8s.compute import Deploy
 from diagrams.k8s.controlplane import API
+from diagrams.k8s.infra import Node
 from diagrams.onprem.network import Istio
 from diagrams.onprem.client import Users
 from diagrams.onprem.monitoring import Grafana
@@ -44,22 +45,25 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
     with Cluster("My projects"):
         asm = Istio("alicloud service mesh (istio)")
         sls = SLS("log service")
-        nas = NAS("file system")
-        lb = SLB("slb")
+        registry = ContainerRegistry("alicloud container registry")
 
-        with Cluster("Alicloud Kubernetes Cluster in other region/zones"):
-            other_lb = SLB("slb")
-            other_ack = ContainerService("alicloud kubernetes")
-        
-        with Cluster("Server Load Balancers (layer 4)\n\nSLB's ip whitelist is configured to only forward traffic with antiddos IP to HAProxy"):
-            slb = [SLB("slb1"), SLB("slb2"), SLB("slb3")]
+        with Cluster("api-gateway"):
+            with Cluster("Server Load Balancers (layer 4)\n\nSLB's ip whitelist is configured to only forward traffic with antiddos IP to HAProxy"):
+                slb = [SLB("slb1"), SLB("slb2"), SLB("slb3")]
 
-        with Cluster("HAProxy (layer 7)\n\n HaProxy performs layer 7 filtering, cert binding and also ip whitelist"):
-            haproxy = [ECS("haproxy1"), ECS("haproxy2"), ECS("haproxy3")]
-            ess = ESS("auto scaling group")
+            with Cluster("HAProxy (layer 7)\n\n HaProxy performs layer 7 filtering, cert binding and also ip whitelist"):
+                haproxy = [ECS("haproxy1"), ECS("haproxy2"), ECS("haproxy3")]
+                ess = ESS("auto scaling group")
 
-        with Cluster("Alicloud Kubernetes Cluster"):
-            ack = ContainerService("alicloud kubernetes")
+        with Cluster("Container Service for Kubernetes"):
+            nas = NAS("file system")
+            lb = SLB("slb")
+            with Cluster("Alicloud Kubernetes Cluster"):
+                ack = ContainerService("alicloud kubernetes")
+            
+            with Cluster("Alicloud Kubernetes Cluster in other region/zones"):
+                other_lb = SLB("slb")
+                other_ack = ContainerService("alicloud kubernetes")
 
     client >> Edge(label="Return antiddos cname") >> dns
     dns >> Edge(label="Resolve domain") >> client >> AntiDdosPro("alicloud antiddos") >> slb >> ess
@@ -69,7 +73,7 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
     haproxy >> asm >> ack
     haproxy >> sls
     asm >> sls
-    ack >> NatGateway("NAT outbound") >> ContainerRegistry("alicloud container registry")
+    ack >> registry
     ack >> sls
     ack >> nas
     for svc in services:
@@ -93,17 +97,31 @@ with Diagram("k8s diagram", show=False, graph_attr=edge_attr):
     
     with Cluster("Alicloud Kubernetes Cluster"):
         apiserver = API("kube-apiserver")
-        with Cluster("Istio Namespace"):
-            istio = Istio("istio-ingressgateway")
+        
+        with Cluster("Istio Nodepool"):
+            Node("worker nodes")
+            with Cluster("Istio Namespace"):
+                istio = Istio("istio-ingressgateway")
 
-        with Cluster("Monitoring Namespace"):
-            grafana = Grafana("grafana")
-            victoriametrics = Custom("victoria-metrics", "./custom-resources/victoria-metrics.png")
-            grafana >> victoriametrics
+        with Cluster("Monitoring Nodepool"):
+            Node("worker nodes")
+            with Cluster("Monitoring Namespace"):
+                grafana = Grafana("grafana")
+                victoriametrics = Custom("victoria-metrics", "./custom-resources/victoria-metrics.png")
+                grafana >> victoriametrics
 
-        with Cluster("Application Namespace"):
-            dex = Dex("dex")
-            app = [Deploy("appxx"), Deploy("appx"), Deploy("app3"), Deploy("app2"), Deploy("app1")]
+        with Cluster("Primary Nodepool"):
+            Node("worker nodes")
+            with Cluster("Other Namespaces"):
+                [Deploy("addons"),Deploy("built-in kube services")]
+            with Cluster("Application Namespace"):
+                app1 = Deploy("app1")
+                app2 = Deploy("app2")
+                app3 = Deploy("app3")
+                app1 << Edge(label="") >> app2 << Edge(label="") >> app3
+                app = [app1, app2, app3]
+            with Cluster("DevOps Namespace"):
+                dex = Dex("dex")
     
     collect = Edge(label="Collect metrics")
     auth - apiserver
