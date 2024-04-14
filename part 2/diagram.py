@@ -34,34 +34,38 @@ edge_attr = {
 with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
     dns = Dns("dns")
     client = Users("clients")
-    asm = Istio("alicloud service mesh (istio)")
-    sls = SLS("log service")
-    services = [sls, NAS("file system"), ApsaradbPolardb("alicloud polardb"), 
+    services = [ApsaradbPolardb("alicloud polardb"), 
                 AnalyticDb("alicloud mysql"), ApsaradbHbase("alicloud hbase"), 
                 ApsaradbRedis("alicloud redis"), ElasticSearch("alicloud elasticsearch")]
     
     with Cluster("On-premises Openstack"):
         k3s = K3S("k3s cluster")
 
-    with Cluster("Server Load Balancers (layer 4)\n\nSLB's ip whitelist is configured to only forward traffic with antiddos IP to HAProxy"):
-        slb = [SLB("slb1"), SLB("slb2"), SLB("slb3")]
+    with Cluster("My projects"):
+        asm = Istio("alicloud service mesh (istio)")
+        sls = SLS("log service")
+        nas = NAS("file system")
+        with Cluster("Server Load Balancers (layer 4)\n\nSLB's ip whitelist is configured to only forward traffic with antiddos IP to HAProxy"):
+            slb = [SLB("slb1"), SLB("slb2"), SLB("slb3")]
 
-    with Cluster("HAProxy (layer 7)\n\n HaProxy performs layer 7 filtering, cert binding and also ip whitelist"):
-        haproxy = [ECS("haproxy1"), ECS("haproxy2"), ECS("haproxy3")]
-        ess = ESS("auto scaling group")
+        with Cluster("HAProxy (layer 7)\n\n HaProxy performs layer 7 filtering, cert binding and also ip whitelist"):
+            haproxy = [ECS("haproxy1"), ECS("haproxy2"), ECS("haproxy3")]
+            ess = ESS("auto scaling group")
 
-    with Cluster("Alicloud Kubernetes Cluster"):
-        ack = ContainerService("alicloud kubernetes")
+        with Cluster("Alicloud Kubernetes Cluster"):
+            ack = ContainerService("alicloud kubernetes")
 
     client >> Edge(label="Return antiddos cname") >> dns
     dns >> Edge(label="Resolve domain") >> client >> AntiDdosPro("alicloud antiddos") >> slb >> ess
     for hp in haproxy:
         ess - hp
-    k3s - ack
+    k3s >> Edge(label="Deployment") >> ack
     haproxy >> asm >> ack
     haproxy >> sls
     asm >> sls
-    ack >> NatGateway("NAT outbound") >> ContainerRegistry("alicloud container registry") 
+    ack >> NatGateway("NAT outbound") >> ContainerRegistry("alicloud container registry")
+    ack >> sls
+    ack >> nas
     for svc in services:
         ack >> svc
 
