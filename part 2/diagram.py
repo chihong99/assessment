@@ -1,7 +1,7 @@
 from diagrams import Cluster, Diagram, Edge
 from diagrams.custom import Custom
 from diagrams.alibabacloud.compute import ESS, ECS, ContainerService, ElasticSearch, ContainerRegistry
-from diagrams.alibabacloud.network import SLB
+from diagrams.alibabacloud.network import SLB, NatGateway
 from diagrams.alibabacloud.storage import NAS
 from diagrams.alibabacloud.application import SLS
 from diagrams.alibabacloud.database import ApsaradbPolardb, ApsaradbHbase, ApsaradbRedis
@@ -34,17 +34,11 @@ edge_attr = {
 with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
     dns = Dns("dns")
     client = Users("clients")
-    antiddos = AntiDdosPro("alicloud antiddos")
     asm = Istio("alicloud service mesh (istio)")
     sls = SLS("log service")
-    nas = NAS("file system")
-    registry = ContainerRegistry("alicloud container registry")
-    polardb = ApsaradbPolardb("alicloud polardb")
-    mysql = AnalyticDb("alicloud mysql")
-    hbase = ApsaradbHbase("alicloud hbase")
-    redis = ApsaradbRedis("alicloud redis")
-    elasticsearch = ElasticSearch("alicloud elasticsearch")
-    services = [sls, nas, registry, polardb, mysql, hbase, redis, elasticsearch]
+    services = [sls, NAS("file system"), ApsaradbPolardb("alicloud polardb"), 
+                AnalyticDb("alicloud mysql"), ApsaradbHbase("alicloud hbase"), 
+                ApsaradbRedis("alicloud redis"), ElasticSearch("alicloud elasticsearch")]
     
     with Cluster("On-premises Openstack"):
         k3s = K3S("k3s cluster")
@@ -58,16 +52,16 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
 
     with Cluster("Alicloud Kubernetes Cluster"):
         ack = ContainerService("alicloud kubernetes")
-        
 
     client >> Edge(label="Return antiddos cname") >> dns
-    dns >> Edge(label="Resolve domain") >> client >> antiddos >> slb >> ess
+    dns >> Edge(label="Resolve domain") >> client >> AntiDdosPro("alicloud antiddos") >> slb >> ess
     for hp in haproxy:
         ess - hp
     k3s - ack
     haproxy >> asm >> ack
     haproxy >> sls
     asm >> sls
+    ack >> NatGateway("NAT outbound") >> ContainerRegistry("alicloud container registry") 
     for svc in services:
         ack >> svc
 
