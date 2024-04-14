@@ -73,10 +73,11 @@ with Diagram("k8s diagram", show=False, graph_attr=edge_attr):
         vault = Vault("hashicorp vault")
         jenkins = Jenkins("jenkins")
         argocd = Argocd("argocd")
+        gitlabci = Gitlabci("gitlabci")
         get = Edge(label="Get creds")
         LetsEncrypt("acme-client")
-        vault - get - Atlantis("atlantis") - Edge(label="Integration") - Gitlab("gitlab") - Gitlabci("gitlabci") - get - vault
-        vault - get - argocd
+        vault - get - Atlantis("atlantis") - Edge(label="Integration") - Gitlab("gitlab") - gitlabci - get - vault
+        vault - get - argocd << Edge(label="trigger") << gitlabci
         vault - get - jenkins
     
     with Cluster("Alicloud Kubernetes Cluster"):
@@ -93,9 +94,10 @@ with Diagram("k8s diagram", show=False, graph_attr=edge_attr):
             dex = Dex("dex")
             app = [Deploy("appxx"), Deploy("appx"), Deploy("app3"), Deploy("app2"), Deploy("app1")]
     
+    collect = Edge(label="Collect metrics")
     auth - apiserver
-    jenkins - Edge(label="Deploy applications") - apiserver
-    argocd - Edge(label="Deploy internal applications") - apiserver
-    istio >> dex << victoriametrics
-    istio >> app << victoriametrics
+    jenkins >> Edge(label="Deploy applications") >> apiserver
+    argocd >> Edge(label="Deploy internal applications") >> apiserver
+    istio >> dex << collect << victoriametrics
+    istio >> app << collect << victoriametrics
     victoriametrics >> istio >> grafana
