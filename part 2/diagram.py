@@ -43,6 +43,7 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
         k3s = K3S("k3s cluster")
 
     with Cluster("My projects"):
+        antiddos = AntiDdosPro("alicloud antiddos")
         asm = Istio("alicloud service mesh (istio)")
         sls = SLS("log service")
         registry = ContainerRegistry("alicloud container registry")
@@ -66,7 +67,7 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
                 other_ack = ContainerService("alicloud kubernetes")
 
     client >> Edge(label="Return antiddos cname") >> dns
-    dns >> Edge(label="Resolve domain") >> client >> AntiDdosPro("alicloud antiddos") >> slb >> ess
+    dns >> Edge(label="Resolve domain") >> client >> antiddos >> slb >> ess
     for hp in haproxy:
         ess - hp
     k3s >> Edge(label="Deployment") >> ack
@@ -89,11 +90,16 @@ with Diagram("k8s diagram", show=False, graph_attr=edge_attr):
         jenkins = Jenkins("jenkins")
         argocd = Argocd("argocd")
         gitlabci = Gitlabci("gitlabci")
-        get = Edge(label="Get creds")
-        LetsEncrypt("acme-client")
-        vault - get - Atlantis("atlantis") - Edge(label="Integration") - Gitlab("gitlab") - gitlabci - get - vault
-        vault - get - argocd << Edge(label="trigger") << gitlabci
-        vault - get - jenkins
+        atlantis = Atlantis("atlantis")
+        inject = Edge(label="inject Creds")
+        atlantis - Edge(label="Integration") - Gitlab("gitlab") - gitlabci
+        vault >> inject >> jenkins
+        vault >> inject >> auth
+        vault >> inject >> gitlabci
+        vault >> inject >> argocd
+        LetsEncrypt("acme-client") >> Edge(label="Store certs") >> vault
+        argocd << Edge(label="trigger") << gitlabci
+        vault >> inject >> atlantis
     
     with Cluster("Alicloud Kubernetes Cluster"):
         apiserver = API("kube-apiserver")
