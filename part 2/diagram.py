@@ -37,7 +37,7 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
     services = [ApsaradbPolardb("alicloud polardb"), 
                 AnalyticDb("alicloud mysql"), ApsaradbHbase("alicloud hbase"), 
                 ApsaradbRedis("alicloud redis"), ElasticSearch("alicloud elasticsearch")]
-    
+
     with Cluster("On-premises Openstack"):
         k3s = K3S("k3s cluster")
 
@@ -45,6 +45,12 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
         asm = Istio("alicloud service mesh (istio)")
         sls = SLS("log service")
         nas = NAS("file system")
+        lb = SLB("slb")
+
+        with Cluster("Alicloud Kubernetes Cluster in other region/zones"):
+            other_lb = SLB("slb")
+            other_ack = ContainerService("alicloud kubernetes")
+        
         with Cluster("Server Load Balancers (layer 4)\n\nSLB's ip whitelist is configured to only forward traffic with antiddos IP to HAProxy"):
             slb = [SLB("slb1"), SLB("slb2"), SLB("slb3")]
 
@@ -68,6 +74,7 @@ with Diagram("Infrastructure Diagram", graph_attr=graph_attr, show=False):
     ack >> nas
     for svc in services:
         ack >> svc
+    ack << Edge(label="grpc service connection") >> lb << Edge(label="") >> other_lb << Edge(label="grpc service connection") >> other_ack
 
 with Diagram("k8s diagram", show=False, graph_attr=edge_attr):
 
