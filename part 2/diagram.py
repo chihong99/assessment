@@ -1,7 +1,7 @@
 from diagrams import Cluster, Diagram, Edge
 from diagrams.custom import Custom
 from diagrams.alibabacloud.compute import ESS, ECS, ContainerService, ElasticSearch, ContainerRegistry
-from diagrams.alibabacloud.network import SLB, NatGateway
+from diagrams.alibabacloud.network import SLB
 from diagrams.alibabacloud.storage import NAS
 from diagrams.alibabacloud.application import SLS
 from diagrams.alibabacloud.database import ApsaradbPolardb, ApsaradbHbase, ApsaradbRedis
@@ -128,7 +128,7 @@ with Diagram("k8s diagram", show=False, graph_attr=edge_attr):
                 app = [app1, app2, app3]
             with Cluster("DevOps Namespace"):
                 dex = Dex("dex")
-    
+
     collect = Edge(label="Collect metrics")
     auth - apiserver
     jenkins >> Edge(label="Deploy applications") >> apiserver
