@@ -5,7 +5,7 @@
 This project focuses on designing and implementing a Kubernetes cluster on cloud services to achieve scalability, reliability, and ease of management for deploying and managing containerized applications.
 
 ## Objectives
-Scalability: Enable the infrastructure to scale horizontally to handle varying workloads.
+/*Scalability*/: Enable the infrastructure to scale horizontally to handle varying workloads.
 Reliability: Ensure high availability of applications by minimizing downtime and providing automated failover mechanisms.
 Ease of Management: Simplify the deployment and management of applications through automation and centralized control.
 
