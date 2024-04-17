@@ -17,5 +17,6 @@ minikube addons enable ingress-dns
 
 3. Deploy helm chart application onto minikube.
 ```
+cd chart
 helm install word-counter .
 ```
