@@ -26,7 +26,7 @@ This project focuses on designing and implementing a Kubernetes cluster on cloud
   - gRPC services across different clusters in different regions are able to communicate.
 
 **Security:**
-  - Implementing security best practices, such as RBAC, to protect the cluster and applications.
+  - Implementing security best practices, such as RBAC, security group, to protect the cluster and applications.
 
 
 ## Reference
