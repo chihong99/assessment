@@ -10,7 +10,7 @@ docker build -t chihong888/word-counter .
 
 2. Setup minikube environment.
 ```
-minikube start --drive=hyperv
+minikube start --driver=hyperv
 minikube addons enable ingress
 minikube addons enable ingress-dns
 ```
