@@ -21,25 +21,35 @@
         document.getElementById('fileInput').addEventListener('change', function(event) {
             var file = event.target.files[0];
             var reader = new FileReader();
-            reader.onload = function() {
-                document.getElementById('input').textContent = reader.result;
-                var text = reader.result.toLowerCase();
-                var words = text.match(/\b\w+\b/g);
-                var wordCounts = {};
-                words.forEach(function(word) {
-                    if (wordCounts[word]) {
-                        wordCounts[word]++;
-                    } else {
-                        wordCounts[word] = 1;
-                    }
-                });
-                var sortedWordCounts = Object.entries(wordCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([word, count]) => `${word}: ${count}`)
-                    .join('\n');
-                document.getElementById('output').textContent = sortedWordCounts;
-            };
-            reader.readAsText(file);
+            var allowedExtensions = /(\.txt)$/i;
+            if (!allowedExtensions.exec(file.name)) {
+                document.getElementById('output').textContent = 'Only .txt file is allowed.';
+                document.getElementById('input').textContent = '';
+                document.getElementById('fileInput').value = '';
+            } else {
+                reader.onload = function() {
+                    document.getElementById('input').textContent = reader.result;
+                    var text = reader.result.toLowerCase();
+                    var words = text.match(/\b\w+\b/g);
+                    var wordCounts = {};
+                    words.forEach(function(word) {
+                        if (wordCounts[word]) {
+                            wordCounts[word]++;
+                        } else {
+                            wordCounts[word] = 1;
+                        }
+                    });
+                    var sortedWordCounts = Object.entries(wordCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([word, count]) => `${word}: ${count}`)
+                        .join('\n');
+                    document.getElementById('output').textContent = sortedWordCounts;
+                    // for (const [key, value] of Object.entries(wordCounts).sort(function(a,b){return b[1] - a[1]})) {
+                    //     document.getElementById('output').textContent += key + ": " + value + "\n";
+                    // }
+                };
+                reader.readAsText(file);
+            }
         });
     </script>
 </body>
